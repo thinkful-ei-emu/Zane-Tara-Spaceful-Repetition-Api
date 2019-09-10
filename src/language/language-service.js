@@ -1,23 +1,44 @@
 class LinkedList {
-  insert(word, db)
-    //set languages.head = word.next;
-    //let tempnode = word;
-    //let prevtempnode = null;
+  setHead(word,db){
+    return db('language')
+    .update({head:word.next})
+    .where({id:word.language_id})
+    
+  }
+  
+  insert(word, db){
+    let tempnode = word;
+    let prevtempnode = null;
 
-    //(while tempnode !== null) {
-        //if(word.mval < tempnode.mval) {
-          //languages.head = word.next.id
-          //word.next = prevtempnode.next;
-          //prevtempnode.next = word.id
-          //break;
-        //}
+    while( tempnode !== null) {
+        if(word.memory_value < tempnode.memory_value) {
+          if(tempnode===word){
+           break;
+          }
+          
+          setHead(word,db)
+         db('word')
+         .update({next:prevtempnode.next})
+         .where({id:word.id});
+          db('word')
+          .update({next:word.id})
+          .where({id:prevtempnode.id})
+         
+          break;
+        }
 
-        //else {
-          //prevtempnode.id = tempnode.id;
-          //tempnode.id = tempnode.next
+        else {
+          let tempID=tempnode.id;
+          prevtempnode = {...tempnode};
+          //tempnode = tempnode.next
         //}
     //}
-  }
+
+    // apple
+    // [orange,cherry]
+  
+}
+}
 
 
 module.exports =  LinkedList;
