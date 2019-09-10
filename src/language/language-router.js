@@ -45,32 +45,31 @@ languageRouter
 
 languageRouter
   .get('/head', async (req, res, next) => {
-    res.json({nextWord: 'manzana',
-      totalScore: 10,
-      wordCorrectCount: 2,
-      wordIncorrectCount: 2})
+    try {
+      const words = await LanguageService.getWord(
+        req.app.get('db'),
+        req.language.id,
+      )
+
+      res.json({
+        nextWord:words[0].original,
+        totalScore: req.language.total_score,
+        wordCorrectCount:words[0].correct_count,
+        wordIncorrectCount:words[0].incorrect_count,
+
+      })
+      next()
+    } catch (error) {
+      next(error)
+    }
+    
   })
 
 languageRouter
   .post('/guess', async (req, res, next) => {
-    const guess = req.body;
-    (guess==="apple" ? res.json({
-      "nextWord": "queso",
-      "wordCorrectCount": 3,
-      "wordIncorrectCount": 2,
-      "totalScore": 11,
-      "answer": "apple",
-      "isCorrect": true
-    }) :
-    res.json({
-      "nextWord": "queso",
-      "wordCorrectCount": 3,
-      "wordIncorrectCount": 2,
-      "totalScore": 11,
-      "answer": "apple",
-      "isCorrect": false
-    }))
     
   })
+
+  
 
 module.exports = languageRouter
