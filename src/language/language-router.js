@@ -45,14 +45,32 @@ languageRouter
 
 languageRouter
   .get('/head', async (req, res, next) => {
-    // implement me
-    res.send('implement me!')
+    res.json({nextWord: 'manzana',
+      totalScore: 10,
+      wordCorrectCount: 2,
+      wordIncorrectCount: 2})
   })
 
 languageRouter
   .post('/guess', async (req, res, next) => {
-    // implement me
-    res.send('implement me!')
+    const guess = req.body;
+    (guess==="apple" ? res.json({
+      "nextWord": "queso",
+      "wordCorrectCount": 3,
+      "wordIncorrectCount": 2,
+      "totalScore": 11,
+      "answer": "apple",
+      "isCorrect": true
+    }) :
+    res.json({
+      "nextWord": "queso",
+      "wordCorrectCount": 3,
+      "wordIncorrectCount": 2,
+      "totalScore": 11,
+      "answer": "apple",
+      "isCorrect": false
+    }))
+    
   })
 
 module.exports = languageRouter
