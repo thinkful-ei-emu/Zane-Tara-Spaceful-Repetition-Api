@@ -11,6 +11,7 @@ class LinkedList {
   insert(word, db) {
     let tempnode = word;
     let prevtempnode = null;
+    console.log('inserting');
 
     for (let i = 0; i < tempnode.memory_value; i++) {
       prevtempnode = { ...tempnode };
@@ -88,7 +89,7 @@ const LanguageService = {
       .first();
   },
 
-  guess(db, id, guess) {
+   guess(db, id, guess){
     const list = new LinkedList();
     let head = db
       .select('head')
@@ -105,41 +106,55 @@ const LanguageService = {
         if (guess === word.translation) {
           head.memory_value *= 2;
           correct = true;
-          db('word')
+          console.log('incrementing correct count')
+           return db('word')
             .increment('correct_count', 1)
             .where({ id: word.id })
-            .then((res) => {
+            .then((res) => {console.log('Incrementing total_score');
               db('language')
                 .increment('total_score', 1)
                 .where({ id: id });
-            });
+            })
+            .then(()=>this.shift(word,db,correct))
         } else {
           correct = false;
-          db('word')
+          return db('word')
             .increment('incorrect_count', 1)
             .where({ id: word.id })
-            .then((res) => {
-              db('language')
-                .increment('total_score', -1)
-                .where({ id: id });
-            });
+            // .then((res) => {
+            //   db('language')
+            //     // .increment('total_score', -1)
+            //     .where({ id: id });
+            // })
+            .then(()=>this.shift(word,db,correct))
         }
-        return list.insert(word, db).then(() => {
-          console.log('we inserted');
-          return db
-            .from('word')
-            .where({ id: word.id })
-            .select('correct_count', 'incorrect_count', 'translation')
-            .first()
-            .then((res) => {
-              console.log('res', res);
-              return {
-                correctCount: res.correct_count
-              };
-            });
-        });
+         
       });
+  },
+  shift(word,db,correct){
+
+    list.insert(word, db).then(() => {
+      console.log('we inserted');
+      return db
+        .from('word')
+        .where({ id: word.id })
+        .select('correct_count', 'incorrect_count', 'translation')
+        .first()
+        .then((res) => {
+          console.log('res', res);
+          return {
+            wordCorrectCount: res.correct_count,
+            wordIncorrectCount: res.incorrect_count,
+            answer:res.translation,
+            isCorrect:correct,
+
+          };
+        });
+    });
+
   }
+
+  
 };
 
 // {
