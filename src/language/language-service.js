@@ -4,30 +4,26 @@ class LinkedList {
       return db('language')
         .update({ head: word.next })
         .where({ id: word.language_id });
-    } else {
     }
   }
 
-  insert(word, db) {
+  async insert(word, db) {
+    await this.setHead(word, db);
     let tempnode = word;
     let prevtempnode = null;
-    console.log('inserting');
 
-    for (let i = 0; i < tempnode.memory_value; i++) {
+    for (let i = 0; i <= word.memory_value; i++) {
       prevtempnode = { ...tempnode };
-      tempnode = db
+      tempnode = await db
         .from('word')
         .select('*')
         .where({ id: tempnode.next })
         .first();
     }
+    return db('word')
+      .where({ id: word.id })
+      .update({ next: prevtempnode.next })
 
-    return this.setHead(word, db)
-      .then((res) => {
-        return db('word')
-          .where({ id: word.id })
-          .update({ next: prevtempnode.next });
-      })
       .then(() => {
         return db('word')
           .where({ id: prevtempnode.id })
@@ -35,8 +31,6 @@ class LinkedList {
       });
   }
 }
-
-const list = new LinkedList();
 
 const LanguageService = {
   getUsersLanguage(db, user_id) {
@@ -66,13 +60,7 @@ const LanguageService = {
         'correct_count',
         'incorrect_count'
       )
-      .where({ language_id })
-      // .then((words) => {
-      //   words.sort((word1, word2) => word1.memory_score < word2.memory_score);
-      //   words.forEach((word) => {
-      //     list.insertFirst(word.id, word.memory_score);
-      //   });
-      // });
+      .where({ language_id });
   },
 
   getWord(db, id) {
@@ -84,86 +72,65 @@ const LanguageService = {
     //return from word where id = languages.head
     return db
       .from('word')
-      .select('original', 'correct_count', 'incorrect_count')
-      .where({ id: head })
-      .first();
-  },
-
-   guess(db, id, guess){
-    const list = new LinkedList();
-    let head = db
-      .select('head')
-      .from('language')
-      .where({ id: id })
-      .first();
-    let correct;
-    return db
-      .from('word')
       .select('*')
       .where({ id: head })
-      .first()
-      .then((word) => {
-        if (guess === word.translation) {
-          head.memory_value *= 2;
-          correct = true;
-          console.log('incrementing correct count')
-           return db('word')
-            .increment('correct_count', 1)
-            .where({ id: word.id })
-            .then((res) => {console.log('Incrementing total_score');
-              return db('language')
-                .increment('total_score', 1)
-                .where({ id: id });
-            })
-            .then(()=> this.shift(word,db,correct))
-        } else {
-          correct = false;
-          return db('word')
-            .increment('incorrect_count', 1)
-            .where({ id: word.id })
-            // .then((res) => {
-            //   db('language')
-            //     // .increment('total_score', -1)
-            //     .where({ id: id });
-            // })
-            .then(()=>this.shift(word,db,correct))
-        }
-         
-      });
+      .first();
   },
-  shift(word,db,correct){
 
+  async guess(db, id, guess) {
+    const word = await this.getWord(db, id);
+
+    if (guess === word.translation) {
+      const newMem = word.memory_value * 2;
+      correct = true;
+      return db('word')
+        .increment('correct_count', 1)
+        .where({ id: word.id })
+        .then(() => {
+          return db('language')
+            .increment('total_score', 1)
+            .where({ id: id });
+        })
+        .then(() => {
+          return db('word')
+            .update({ memory_value: newMem })
+            .where({ id: word.id });
+        })
+        .then(() => this.shift(db, id, correct));
+    } else {
+      const newMem = 1;
+      correct = false;
+      return db('word')
+        .increment('incorrect_count', 1)
+        .where({ id: word.id })
+        .then(() => {
+          return db('word')
+            .update({ memory_value: newMem })
+            .where({ id: word.id });
+        })
+        .then(() => this.shift(db, id, correct));
+    }
+  },
+
+  async shift(db, id, correct) {
+    const list = new LinkedList();
+    const word = await this.getWord(db, id);
     return list.insert(word, db).then(() => {
-      console.log('we inserted');
       return db
         .from('word')
         .where({ id: word.id })
         .select('correct_count', 'incorrect_count', 'translation')
         .first()
         .then((res) => {
-          console.log('res', res);
           return {
             wordCorrectCount: res.correct_count,
             wordIncorrectCount: res.incorrect_count,
-            answer:res.translation,
-            isCorrect:correct,
-
+            answer: res.translation,
+            isCorrect: correct
           };
         });
     });
-
   }
-
-  
 };
-
-// {
-//   "nextWord": "test-next-word-from-generic-guess", //word
-//   "wordCorrectCount": 777, word
-//   "wordIncorrectCount": 777, word
-//   "totalScore": 777, language
-//   "answer": "test-answer-from-generic-guess", word
-//   "isCorrect": true
-// }
 
 module.exports = LanguageService;
