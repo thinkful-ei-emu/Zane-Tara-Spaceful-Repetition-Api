@@ -111,11 +111,11 @@ const LanguageService = {
             .increment('correct_count', 1)
             .where({ id: word.id })
             .then((res) => {console.log('Incrementing total_score');
-              db('language')
+              return db('language')
                 .increment('total_score', 1)
                 .where({ id: id });
             })
-            .then(()=>this.shift(word,db,correct))
+            .then(()=> this.shift(word,db,correct))
         } else {
           correct = false;
           return db('word')
@@ -133,7 +133,7 @@ const LanguageService = {
   },
   shift(word,db,correct){
 
-    list.insert(word, db).then(() => {
+    return list.insert(word, db).then(() => {
       console.log('we inserted');
       return db
         .from('word')
