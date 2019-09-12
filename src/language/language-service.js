@@ -13,13 +13,22 @@ class LinkedList {
     let prevtempnode = null;
 
     for (let i = 0; i <= word.memory_value; i++) {
-      prevtempnode = { ...tempnode };
-      tempnode = await db
-        .from('word')
-        .select('*')
-        .where({ id: tempnode.next })
-        .first();
+      if (tempnode.next) {
+        prevtempnode = { ...tempnode };
+        tempnode = await db
+          .from('word')
+          .select('*')
+          .where({ id: tempnode.next })
+          .first();
+      }
+      else {
+        prevtempnode = { ...tempnode };
+        break;
+      
+      }
     }
+
+    
     return db('word')
       .where({ id: word.id })
       .update({ next: prevtempnode.next })
